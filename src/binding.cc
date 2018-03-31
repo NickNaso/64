@@ -13,60 +13,48 @@
 // limitations under the License.
 
 #include <stdlib.h>
-#include <node.h>
-#include <nan.h>
+#include <napi.h>
 
 #include "include/libbase64.h"
 
-NAN_METHOD(Encode) {
-  Nan::HandleScope();
-
-  v8::Local<v8::Object> buffer = info[0].As<v8::Object>();
-  if (node::Buffer::HasInstance(buffer)) {
-    char const* in = node::Buffer::Data(buffer);
-    size_t inLen = node::Buffer::Length(buffer);
-
+Napi::Value Encode(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (info[0].IsBuffer()) {
+    Napi::Buffer<char> buffer = info[0].As<Napi::Buffer<char>>();
+    char const* in = buffer.Data();
+    size_t inLen = buffer.Length();
     size_t const outAlloc = 4 + inLen * 4 / 3;
     char* out = static_cast<char*>(malloc(outAlloc));
     size_t outLen;
-
     base64_encode(in, inLen, out, &outLen, 0);
-
-    info
-      .GetReturnValue()
-      .Set(Nan::NewBuffer(out, outLen).ToLocalChecked());
+    return Napi::Buffer<char>::New(env, out, outLen);
   } else {
-    Nan::ThrowTypeError("Expected Buffer");
+    throw Napi::TypeError::New(env, "Expected Buffer");
   }
 }
 
-NAN_METHOD(Decode) {
-  Nan::HandleScope();
-
-  v8::Local<v8::Object> buffer = info[0].As<v8::Object>();
-  if (node::Buffer::HasInstance(buffer)) {
-    char const* in = node::Buffer::Data(buffer);
-    size_t inLen = node::Buffer::Length(buffer);
-
+Napi::Value Decode(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if (info[0].IsBuffer()) {
+    Napi::Buffer<char> buffer = info[0].As<Napi::Buffer<char>>();
+    char const* in = buffer.Data();
+    size_t inLen = buffer.Length();
     size_t const outAlloc = 1 + inLen * 3 / 4;
     char* out = static_cast<char*>(malloc(outAlloc));
     size_t outLen;
-
     base64_decode(in, inLen, out, &outLen, 0);
-
-    info
-      .GetReturnValue()
-      .Set(Nan::NewBuffer(out, outLen).ToLocalChecked());
+    return Napi::Buffer<char>::New(env, out, outLen);
   } else {
-    Nan::ThrowTypeError("Expected Buffer");
+    throw Napi::TypeError::New(env, "Expected Buffer");
   }
 }
 
-NAN_MODULE_INIT(init) {
-  Nan::Set(target, Nan::New("encode").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(Encode)).ToLocalChecked());
-  Nan::Set(target, Nan::New("decode").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(Decode)).ToLocalChecked());
+Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  exports.Set(Napi::String::New(env, "encode"),
+    Napi::Function::New(env, Encode));
+  exports.Set(Napi::String::New(env, "decode"),
+    Napi::Function::New(env, Decode));
+  return exports;
 }
 
-NODE_MODULE(base64, init)
+NODE_API_MODULE(base64, Init)

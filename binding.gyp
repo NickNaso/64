@@ -12,6 +12,7 @@
       '-O3'
     ],
     'xcode_settings': {
+      'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
       'CLANG_CXX_LANGUAGE_STANDARD': 'c++11',
       'CLANG_CXX_LIBRARY': 'libc++',
       'MACOSX_DEPLOYMENT_TARGET': '10.7',
@@ -106,14 +107,15 @@
         'base64_ssse3',
         'base64_neon64',
         'base64_neon32',
-        'base64_generic'
+        'base64_generic',
+        "<!(node -p \"require('node-addon-api').gyp\")"
       ],
       'sources': [
         'src/lib/lib.c',
         'src/lib/codec_choose.c',
         'src/binding.cc'
       ],
-      'include_dirs': ['<!(node -e "require(\'nan\')")'],
+      'include_dirs': ["<!@(node -p \"require('node-addon-api').include\")"],
       'cflags_cc': ['-flto']
     }
   ]
